@@ -1,0 +1,48 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>第 68 条弱网播放｜阿舒尔 ASHUR</title><style>
+:root{color-scheme:light;--ink:#18332f;--accent:#17594b;--paper:#faf9f4;--muted:#536660;--line:#c9d4cc}*{box-sizing:border-box}
+body{margin:0;font:17px/1.65 'Inter','PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+header,main,footer{width:min(820px,calc(100% - 36px));margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 0;border-bottom:1px solid var(--line)}header strong{font-size:24px;letter-spacing:-.05em}a{color:var(--accent);text-underline-offset:4px}h1{font-size:clamp(25px,4.6vw,42px);letter-spacing:-.035em;line-height:1.2;margin:12px 0 18px}main{padding:25px 0 34px}footer{padding:19px 0;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}.meta{font-size:14px;color:var(--muted);margin:.5em 0}.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:20px}.card{display:grid;grid-template-columns:100px 1fr;align-items:center;gap:16px;text-decoration:none;background:white;color:var(--ink);padding:12px;border:1px solid var(--line);border-radius:12px}.card img{width:100px;height:144px;object-fit:contain;background:#142825;border-radius:6px}.card span{display:block}.player{background:#162827;border-radius:12px;overflow:hidden}video{width:100%;height:min(64vh,620px);display:block;object-fit:contain}.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;margin-top:1em}.actions a,.actions button{font:inherit;font-size:15px}.actions button{border:1px solid var(--line);padding:.35em .9em;border-radius:1em;background:white;color:var(--accent);cursor:pointer}.stat{background:white;border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:5px 0}.meter{font:600 clamp(18px,4vw,28px)/1.4 ui-monospace,monospace;display:block;overflow-wrap:anywhere}.testvideo{height:clamp(130px,25vh,240px)}[hidden]{display:none!important}
+</style></head><body><header><a href="/ashur-plaque-video-library/" style="text-decoration:none"><strong>ASHUR</strong> 阿舒尔</a><a href="/ashur-plaque-video-library/">视频目录</a></header><main><a href="/ashur-plaque-video-library/">← 视频目录</a><p class="meta">第 68 条 · 省流版 · 0:27</p><h1>从夜间场景切到镜前</h1><div class="player"><video controls playsinline id="movie" preload="none" poster="/ashur-plaque-video-library/posters/68.jpg" aria-label="第 68 条省流视频"></video></div><div class="actions"><button id="loadall" type="button">先缓冲再播放</button><button id="stream" type="button">常规播放</button><a href="/ashur-plaque-video-library/clips/68.html">标准画质</a><a href="/ashur-plaque-video-library/media/68-low.mp4">直接打开省流 MP4</a></div><div id="net" role="status" aria-live="polite" style="padding:.6em 0"></div><progress id="progress" max="1156629" value="0" style="display:block;width:min(100%,400px)" hidden></progress><script>
+(() => {
+ const src='/ashur-plaque-video-library/media/68-low.mp4',size=1156629,hash='c108cda6597a6c67d8466bba742e2b1d1f0f5ea5d39401ca54fb69eab21d7303';
+ const elem=id=>document.getElementById(id),v=elem('movie'),net=elem('net'),progress=elem('progress'),fill=elem('loadall'),stream=elem('stream');
+ const diag=!!elem('clock'); if(diag)v.muted=true;
+ let op=0,controller=null,blobUrl=null,mode='idle';
+ const set=t=>{net.textContent=t};
+ const play=async id=>{try{await v.play();if(id===op)v.dispatchEvent(new Event('play-attempted'))}catch(e){if(id===op)set((mode==='buffer'?'完整文件已缓冲。':'')+'请点播放器的播放键继续。'+(diag?' '+e.name:''))}};
+ function clear(){
+   op+=1;window.ashurBufferComplete=false;if(controller){controller.abort();controller=null}
+   v.pause();v.removeAttribute('src');v.load();
+   if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}
+   progress.hidden=true;progress.value=0;fill.disabled=false;return op;
+ }
+ function normal(start){
+   const id=clear();mode='stream';v.preload='metadata';v.src=src;v.load();set('常规在线播放。网络较慢时可以先缓冲整条视频。');if(start||diag)play(id);
+ }
+ async function full(){
+   const id=clear();mode='fetching';controller=new AbortController();fill.disabled=true;progress.hidden=false;
+   function update(bytes){progress.value=bytes;set('正在缓冲 '+(bytes/1000000).toFixed(2)+' / '+(size/1000000).toFixed(2)+' MB（'+Math.floor(100*bytes/size)+'%）')}
+   update(0);
+   try{
+    const r=await fetch(src,{signal:controller.signal,credentials:'omit'});
+    if(!r.ok||r.status!==200)throw Error('HTTP '+r.status);
+    let bytes=0;const parts=[];
+    if(r.body&&r.body.getReader){const reader=r.body.getReader();while(true){
+      const result=await reader.read();if(id!==op)return;if(result.done)break;
+      bytes+=result.value.byteLength;if(bytes>size)throw Error('大小不符');parts.push(result.value);update(bytes);
+    }}else{const data=await r.arrayBuffer();if(id!==op)return;parts.push(data);bytes=data.byteLength;update(bytes)}
+    if(bytes!==size)throw Error('文件未完整到达');
+    const blob=new Blob(parts,{type:'video/mp4'});
+    if(crypto.subtle){const digest=new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer()));
+      if(Array.from(digest,b=>b.toString(16).padStart(2,'0')).join('')!==hash)throw Error('文件校验未通过');}
+    if(id!==op)return;
+    blobUrl=URL.createObjectURL(blob);v.preload='auto';v.src=blobUrl;v.load();mode='buffer';
+    window.ashurBufferComplete=true;set('1.16 MB 已全部缓冲。');await play(id);
+   }catch(e){if(id!==op)return;mode='error';set('缓冲失败：'+e.message+'。可重试或选择常规播放。')}
+   finally{if(id===op){fill.disabled=false;controller=null}}
+ }
+ fill.addEventListener('click',full);stream.addEventListener('click',()=>normal(true));
+ window.addEventListener('pagehide',()=>{if(controller)controller.abort()},{once:true});
+ if(new URL(location.href).searchParams.get('buffer')==='full')full();else normal(false);
+})();
+</script></main><footer>阿舒尔（天津）医疗器械有限公司 · 阿舒尔品牌方提供</footer></body></html>

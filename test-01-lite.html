@@ -31,7 +31,7 @@ read();setInterval(read,250);v.addEventListener('error',read);
  const set=t=>{net.textContent=t};
  const play=async id=>{try{await v.play();if(id===op)v.dispatchEvent(new Event('play-attempted'))}catch(e){if(id===op)set((mode==='buffer'?'完整文件已缓冲。':'')+'请点播放器的播放键继续。'+(diag?' '+e.name:''))}};
  function clear(){
-   op+=1;if(controller){controller.abort();controller=null}
+   op+=1;window.ashurBufferComplete=false;if(controller){controller.abort();controller=null}
    v.pause();v.removeAttribute('src');v.load();
    if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}
    progress.hidden=true;progress.value=0;fill.disabled=false;return op;
